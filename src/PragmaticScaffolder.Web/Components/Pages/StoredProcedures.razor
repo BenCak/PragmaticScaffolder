@@ -7,11 +7,15 @@
 
 <PageTitle>Stored Procedures — Pragmatic Scaffolder</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-1">Step 2b — Stored Procedures</MudText>
-<MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
-    Select stored procedures to scaffold. Only procedures whose result set can be described are available.
-    Prefix settings (SP: <strong>@State.SpPrefix</strong> / Table: <strong>@State.TablePrefix</strong>) are applied to derive feature names.
+<MudText Typo="Typo.h5" Class="mb-1">Step 2b — Stored Procedures for UI</MudText>
+<MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">
+    Select which stored procedures should get a search page, API endpoint, and service.
+    Prefixes applied — SP: <strong>@State.SpPrefix</strong> / Table: <strong>@State.TablePrefix</strong>
 </MudText>
+<MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+    All stored procedures remain accessible via the <strong>AppDbContext connection</strong>.
+    Only selected procedures get generated UI and endpoints.
+</MudAlert>
 
 @if (State.Database is null)
 {

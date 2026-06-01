@@ -6,10 +6,14 @@
 
 <PageTitle>Select Tables — Pragmatic Scaffolder</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-1">Step 2 — Select Tables</MudText>
-<MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
-    Choose the tables you want to scaffold. One feature folder is generated per table.
+<MudText Typo="Typo.h5" Class="mb-1">Step 2 — Select Tables for UI</MudText>
+<MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">
+    Select which tables should get a Blazor page, API endpoints, service, and DTOs.
 </MudText>
+<MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+    <strong>All tables</strong> are always included in the EF Core entities and DbContext — your full ORM is always generated.
+    Select only the tables you want to expose as UI and API.
+</MudAlert>
 
 @if (State.Database is null)
 {

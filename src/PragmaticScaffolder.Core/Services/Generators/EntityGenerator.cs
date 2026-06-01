@@ -8,7 +8,7 @@ public sealed class EntityGenerator
 {
     public IEnumerable<GeneratedFile> Generate(GenerationRequest request)
     {
-        foreach (var table in request.Tables)
+        foreach (var table in request.AllTables)
         {
             var className = NamingHelper.ToClassName(table.Name, request.TablePrefix);
             var pkColumns = table.PrimaryKeyColumns.ToList();
