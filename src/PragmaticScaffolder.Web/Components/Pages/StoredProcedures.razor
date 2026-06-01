@@ -102,6 +102,13 @@ else
 }
 
 @code {
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // SSR prerender uses a fresh DI scope where State.Database is null.
+        // After the SignalR circuit connects, force a re-render so the real state is shown.
+        if (firstRender) StateHasChanged();
+    }
+
     private IEnumerable<IGrouping<string, StoredProcedureMetadata>> GetGroups()
     {
         return State.Database!.AllStoredProcedures
