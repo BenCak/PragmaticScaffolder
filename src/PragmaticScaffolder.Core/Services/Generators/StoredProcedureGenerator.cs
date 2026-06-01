@@ -46,6 +46,7 @@ public sealed class StoredProcedureGenerator
             var model = new
             {
                 Namespace         = $"{ns}.Api.Features.{featureFolder}",
+                BlazorNamespace   = $"{ns}.Blazor.Features.{featureFolder}",
                 DataNamespace     = $"{ns}.Data",
                 SharedNamespace   = $"{ns}.Shared",
                 FeatureFolder     = featureFolder,

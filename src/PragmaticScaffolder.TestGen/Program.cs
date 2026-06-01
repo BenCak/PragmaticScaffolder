@@ -27,13 +27,26 @@ if (Directory.Exists(outputPath))
     Directory.Delete(outputPath, recursive: true);
 Directory.CreateDirectory(outputPath);
 
+// Select the test SP (usp_tblOrders_Search) if it exists
+var selectedProcs = db.AllStoredProcedures
+    .Where(sp => sp.Name == "usp_tblOrders_Search" && sp.HasDescribableResult)
+    .ToList();
+
+if (selectedProcs.Count > 0)
+    Console.WriteLine($"SP selected: {selectedProcs[0].Name} — {selectedProcs[0].InputParameters.Count()} params, {selectedProcs[0].ResultColumns.Count} cols");
+else
+    Console.WriteLine("No describable SPs found (skipping SP generation)");
+
 var request = new GenerationRequest
 {
     RootNamespace    = "nws",
     OutputPath       = outputPath,
     Tables           = allTables,
     AllTables        = allTables,
-    ConnectionString = ConnStr
+    ConnectionString = ConnStr,
+    SpPrefix         = "usp_",
+    TablePrefix      = "tbl",
+    StoredProcedures = selectedProcs
 };
 
 Console.WriteLine("Generating...");

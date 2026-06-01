@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using {{ shared_namespace }};
 using {{ shared_namespace }}.{{ feature_folder }};
 
-namespace {{ namespace }};
+namespace {{ blazor_namespace }};
 
 public class {{ proc_class }}ApiClient(HttpClient http)
 {

@@ -192,32 +192,35 @@ public sealed class SqlServerSchemaReader
         var procMap = new Dictionary<string, StoredProcedureMetadata>(StringComparer.OrdinalIgnoreCase);
         await using var cmd = new SqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@schema", schema);
-        await using var reader = await cmd.ExecuteReaderAsync(ct);
-        while (await reader.ReadAsync(ct))
+        // Explicit using block so reader is fully closed before TryDescribeResultSetAsync opens another command
+        await using (var reader = await cmd.ExecuteReaderAsync(ct))
         {
-            var procName = reader.GetString(0);
-            if (!procMap.TryGetValue(procName, out var sp))
+            while (await reader.ReadAsync(ct))
             {
-                sp = new StoredProcedureMetadata { Schema = schema, Name = procName };
-                procMap[procName] = sp;
-            }
-            if (!reader.IsDBNull(1))
-            {
-                var dataType = reader.GetString(3);
-                var (clrType, _) = MapClrType(dataType, isNullable: true);
-                sp.Parameters.Add(new ProcParameterMetadata
+                var procName = reader.GetString(0);
+                if (!procMap.TryGetValue(procName, out var sp))
                 {
-                    ParameterName   = reader.GetString(1),
-                    DataType        = dataType,
-                    ClrType         = clrType,
-                    IsOutput        = reader.GetBoolean(4),
-                    MaxLength       = reader.IsDBNull(5) ? null : (int)reader.GetInt16(5),
-                    Precision       = reader.IsDBNull(6) ? null : (int)reader.GetByte(6),
-                    Scale           = reader.IsDBNull(7) ? null : (int)reader.GetByte(7),
-                    OrdinalPosition = reader.GetInt32(2)
-                });
+                    sp = new StoredProcedureMetadata { Schema = schema, Name = procName };
+                    procMap[procName] = sp;
+                }
+                if (!reader.IsDBNull(1))
+                {
+                    var dataType = reader.GetString(3);
+                    var (clrType, _) = MapClrType(dataType, isNullable: true);
+                    sp.Parameters.Add(new ProcParameterMetadata
+                    {
+                        ParameterName   = reader.GetString(1),
+                        DataType        = dataType,
+                        ClrType         = clrType,
+                        IsOutput        = reader.GetBoolean(4),
+                        MaxLength       = reader.IsDBNull(5) ? null : (int)reader.GetInt16(5),
+                        Precision       = reader.IsDBNull(6) ? null : (int)reader.GetByte(6),
+                        Scale           = reader.IsDBNull(7) ? null : (int)reader.GetByte(7),
+                        OrdinalPosition = reader.GetInt32(2)
+                    });
+                }
             }
-        }
+        } // reader disposed here — connection free for TryDescribeResultSetAsync
 
         foreach (var sp in procMap.Values)
             await TryDescribeResultSetAsync(conn, sp, ct);

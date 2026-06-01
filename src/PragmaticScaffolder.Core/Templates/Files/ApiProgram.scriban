@@ -36,7 +36,7 @@ app.MapGet("/", () => Results.Ok(new { Name = "{{ namespace }}.Api", Status = "O
 app.Map{{ f.class_name }}Endpoints();
 {{- end }}
 {{- for p in procs }}
-app.MapGroup("/api/{{ p.route }}").Map{{ p.proc_class }}Endpoints();
+app.Map{{ p.proc_class }}Endpoints();
 {{- end }}
 
 app.Run();

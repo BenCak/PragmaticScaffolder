@@ -3,6 +3,7 @@
 @using MudBlazor
 @using {{ shared_namespace }}
 @using {{ shared_namespace }}.{{ feature_folder }}
+@using {{ blazor_namespace }}
 @inject {{ proc_class }}ApiClient ApiClient
 @inject ISnackbar Snackbar
 
