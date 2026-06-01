@@ -28,7 +28,9 @@ public class {{ proc_class }}Service(AppDbContext db)
             cmd.CommandType = CommandType.StoredProcedure;
 
 {{- for p in input_params }}
-            cmd.Parameters.Add(new SqlParameter("{{ p.parameter_name }}", (object?)req.{{ p.property_name }} ?? DBNull.Value));
+            // Only add the parameter if the caller supplied a value — omitting it lets the SP use its default.
+            if (req.{{ p.property_name }} != null)
+                cmd.Parameters.Add(new SqlParameter("{{ p.parameter_name }}", (object)req.{{ p.property_name }}));
 {{- end }}
 
             using var reader = await cmd.ExecuteReaderAsync(ct);
