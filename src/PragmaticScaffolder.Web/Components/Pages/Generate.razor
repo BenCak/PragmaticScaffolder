@@ -169,10 +169,13 @@ else
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (State.SelectedTables.Count == 0) return;
-        await RunPreviewAsync();
+        // OnInitializedAsync runs during SSR prerender with an empty ScaffolderState.
+        // OnAfterRenderAsync(firstRender) fires only after the interactive SignalR
+        // circuit connects, so the real state (with selected tables) is available.
+        if (firstRender && _preview is null && State.SelectedTables.Count > 0)
+            await RunPreviewAsync();
     }
 
     // ── Request builder ──────────────────────────────────────────────────────
