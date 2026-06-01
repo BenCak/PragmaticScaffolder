@@ -1,0 +1,133 @@
+@page "/procedures"
+@using PragmaticScaffolder.Core.Models
+@using PragmaticScaffolder.Core.Services
+@inject ScaffolderState State
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Stored Procedures — Pragmatic Scaffolder</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-1">Step 2b — Stored Procedures</MudText>
+<MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
+    Select stored procedures to scaffold. Only procedures whose result set can be described are available.
+    Prefix settings (SP: <strong>@State.SpPrefix</strong> / Table: <strong>@State.TablePrefix</strong>) are applied to derive feature names.
+</MudText>
+
+@if (State.Database is null)
+{
+    <MudAlert Severity="Severity.Warning">
+        Not connected. <MudLink Href="/">Go back to Connect</MudLink>.
+    </MudAlert>
+}
+else
+{
+    var groups = GetGroups();
+
+    @if (!groups.Any())
+    {
+        <MudAlert Severity="Severity.Info">No stored procedures found in this database.</MudAlert>
+    }
+    else
+    {
+        <MudStack Row="true" Spacing="2" Class="mb-3">
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="SelectAllDescribable">
+                Select All Describable
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="ClearAll">
+                Clear All
+            </MudButton>
+            <MudText Class="ml-2 my-auto" Typo="Typo.body2">
+                @State.SelectedProcKeys.Count selected
+            </MudText>
+        </MudStack>
+
+        @foreach (var group in groups)
+        {
+            <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3">@group.Key</MudText>
+            <MudPaper Elevation="1" Class="mb-2">
+                <MudList T="string" Dense="true">
+                    @foreach (var sp in group)
+                    {
+                        var key = $"{sp.Schema}.{sp.Name}";
+                        var selected = State.SelectedProcKeys.Contains(key);
+                        <MudListItem Dense="true">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                @if (sp.HasDescribableResult)
+                                {
+                                    <MudCheckBox Value="@selected"
+                                                 ValueChanged="@((bool v) => Toggle(key, v))"
+                                                 Dense="true" />
+                                }
+                                else
+                                {
+                                    <MudTooltip Text="@($"Cannot describe result: {sp.DescribeError}")">
+                                        <MudCheckBox Value="false" Disabled="true" Dense="true" />
+                                    </MudTooltip>
+                                }
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.body2"
+                                             Style="@(sp.HasDescribableResult ? "" : "opacity:0.5")">
+                                        @sp.Name
+                                    </MudText>
+                                    @if (sp.HasDescribableResult)
+                                    {
+                                        var (ff, cn, an) = ParseName(sp.Name);
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                            → @cn@an &nbsp;·&nbsp;
+                                            @sp.InputParameters.Count() input param(s) &nbsp;·&nbsp;
+                                            @sp.ResultColumns.Count col(s)
+                                        </MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.caption" Color="Color.Error">
+                                            Result set cannot be described
+                                        </MudText>
+                                    }
+                                </MudStack>
+                            </MudStack>
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudPaper>
+        }
+    }
+
+    <MudStack Row="true" Spacing="2" Class="mt-4">
+        <MudButton Href="/tables">← Back to Tables</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/generate">
+            Continue to Generate →
+        </MudButton>
+    </MudStack>
+}
+
+@code {
+    private IEnumerable<IGrouping<string, StoredProcedureMetadata>> GetGroups()
+    {
+        return State.Database!.AllStoredProcedures
+            .OrderBy(sp => sp.Name)
+            .GroupBy(sp =>
+            {
+                var (ff, _, _) = ParseName(sp.Name);
+                return ff;
+            })
+            .OrderBy(g => g.Key);
+    }
+
+    private (string FeatureFolder, string ClassName, string ActionName) ParseName(string procName) =>
+        NamingHelper.ParseProcName(procName, State.SpPrefix, State.TablePrefix);
+
+    private void Toggle(string key, bool value)
+    {
+        if (value) State.SelectedProcKeys.Add(key);
+        else       State.SelectedProcKeys.Remove(key);
+    }
+
+    private void SelectAllDescribable()
+    {
+        foreach (var sp in State.Database!.AllStoredProcedures.Where(s => s.HasDescribableResult))
+            State.SelectedProcKeys.Add($"{sp.Schema}.{sp.Name}");
+    }
+
+    private void ClearAll() => State.SelectedProcKeys.Clear();
+}

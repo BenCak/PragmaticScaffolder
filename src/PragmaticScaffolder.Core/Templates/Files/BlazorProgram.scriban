@@ -4,6 +4,9 @@ using {{ namespace }}.Blazor;
 {{- for f in features }}
 using {{ namespace }}.Blazor.Features.{{ f.feature_folder }};
 {{- end }}
+{{- for p in procs }}
+using {{ namespace }}.Blazor.Features.{{ p.feature_folder }};
+{{- end }}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +17,9 @@ var apiBaseUrl = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhos
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = apiBaseUrl });
 {{- for f in features }}
 builder.Services.AddScoped<{{ f.feature_folder }}ApiClient>();
+{{- end }}
+{{- for p in procs }}
+builder.Services.AddScoped<{{ p.api_client_class }}>();
 {{- end }}
 
 var app = builder.Build();

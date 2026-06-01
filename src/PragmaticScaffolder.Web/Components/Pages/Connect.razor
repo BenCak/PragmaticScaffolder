@@ -47,6 +47,10 @@
                       Placeholder="tbl" FullWidth="true" Variant="Variant.Outlined" Class="mb-4"
                       HelperText='Optional. Strips this prefix from table names in generated code (e.g. "tbl" turns "tblCustomer" → "Customer").' />
 
+        <MudTextField @bind-Value="State.SpPrefix" Label="Stored Procedure Prefix to Strip"
+                      Placeholder="usp_" FullWidth="true" Variant="Variant.Outlined" Class="mb-4"
+                      HelperText='Optional. Strips this prefix from SP names (e.g. "usp_" turns "usp_tblOrders_Search" → "tblOrders_Search", then table prefix strips further).' />
+
         <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        Disabled="_busy || !_valid" OnClick="ConnectAsync">
@@ -85,6 +89,7 @@
         State.RootNamespace   = profile.DefaultNamespace;
         State.OutputPath      = profile.DefaultOutputPath;
         State.TablePrefix     = profile.TablePrefix;
+        State.SpPrefix        = profile.SpPrefix;
     }
 
     private async Task ConnectAsync()
@@ -107,6 +112,7 @@
             Snackbar.Add("Connected! Loading schema…", Severity.Info);
             State.Database = await SchemaReader.ReadDatabaseAsync(_connStr);
             State.SelectedTableKeys.Clear();
+            State.SelectedProcKeys.Clear();
             Nav.NavigateTo("/tables");
         }
         catch (Exception ex)

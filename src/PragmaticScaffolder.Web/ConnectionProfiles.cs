@@ -8,7 +8,8 @@ public sealed record ConnectionProfile(
     string ConnectionString,
     string DefaultNamespace,
     string DefaultOutputPath,
-    string TablePrefix = ""
+    string TablePrefix = "",
+    string SpPrefix    = "usp_"
 );
 
 /// <summary>Built-in quick-connect profiles for local development.</summary>

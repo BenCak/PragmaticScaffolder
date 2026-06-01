@@ -185,6 +185,8 @@ else
         AllTables           = State.Database?.AllTables.ToList() ?? [],
         ConnectionString    = State.ConnectionString,
         TablePrefix         = State.TablePrefix,
+        SpPrefix            = State.SpPrefix,
+        StoredProcedures    = State.SelectedStoredProcedures,
         GenerateApiTests    = State.GenerateApiTests,
         GenerateBlazorTests = State.GenerateBlazorTests
     };

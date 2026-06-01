@@ -20,6 +20,12 @@ public sealed class GenerationRequest
     /// <summary>Table name prefix to strip from generated class/route names (e.g. "tbl" turns "tblCustomer" → "Customer").</summary>
     public string TablePrefix { get; set; } = string.Empty;
 
+    /// <summary>Stored procedure name prefix to strip (e.g. "usp_" turns "usp_tblOrders_Search" → "tblOrders_Search").</summary>
+    public string SpPrefix { get; set; } = string.Empty;
+
+    /// <summary>Stored procedures selected for scaffolding.</summary>
+    public List<StoredProcedureMetadata> StoredProcedures { get; set; } = [];
+
     /// <summary>Whether to generate the Api.Tests project and test stubs.</summary>
     public bool GenerateApiTests { get; set; } = true;
 

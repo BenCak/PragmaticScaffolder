@@ -33,7 +33,10 @@ public sealed class SqlServerSchemaReader
 
         var schemas = await ReadSchemasAsync(conn, ct);
         foreach (var schema in schemas)
-            schema.Tables = await ReadTablesAsync(conn, schema.Name, ct);
+        {
+            schema.Tables           = await ReadTablesAsync(conn, schema.Name, ct);
+            schema.StoredProcedures = await ReadStoredProceduresAsync(conn, schema.Name, ct);
+        }
 
         db.Schemas = schemas;
         return db;
@@ -168,6 +171,98 @@ public sealed class SqlServerSchemaReader
                 ReferencedColumn = reader.GetString(4)
             });
         return fks;
+    }
+
+    private static async Task<List<StoredProcedureMetadata>> ReadStoredProceduresAsync(
+        SqlConnection conn, string schema, CancellationToken ct)
+    {
+        const string sql = """
+            SELECT p.name, pp.name AS param_name, pp.parameter_id,
+                   t.name AS type_name, pp.is_output,
+                   pp.max_length, pp.precision, pp.scale
+            FROM sys.procedures p
+            JOIN sys.schemas s ON p.schema_id = s.schema_id
+            LEFT JOIN sys.parameters pp
+                ON pp.object_id = p.object_id AND pp.parameter_id > 0
+            LEFT JOIN sys.types t ON pp.user_type_id = t.user_type_id
+            WHERE s.name = @schema
+            ORDER BY p.name, pp.parameter_id
+            """;
+
+        var procMap = new Dictionary<string, StoredProcedureMetadata>(StringComparer.OrdinalIgnoreCase);
+        await using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@schema", schema);
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            var procName = reader.GetString(0);
+            if (!procMap.TryGetValue(procName, out var sp))
+            {
+                sp = new StoredProcedureMetadata { Schema = schema, Name = procName };
+                procMap[procName] = sp;
+            }
+            if (!reader.IsDBNull(1))
+            {
+                var dataType = reader.GetString(3);
+                var (clrType, _) = MapClrType(dataType, isNullable: true);
+                sp.Parameters.Add(new ProcParameterMetadata
+                {
+                    ParameterName   = reader.GetString(1),
+                    DataType        = dataType,
+                    ClrType         = clrType,
+                    IsOutput        = reader.GetBoolean(4),
+                    MaxLength       = reader.IsDBNull(5) ? null : (int)reader.GetInt16(5),
+                    Precision       = reader.IsDBNull(6) ? null : (int)reader.GetByte(6),
+                    Scale           = reader.IsDBNull(7) ? null : (int)reader.GetByte(7),
+                    OrdinalPosition = reader.GetInt32(2)
+                });
+            }
+        }
+
+        foreach (var sp in procMap.Values)
+            await TryDescribeResultSetAsync(conn, sp, ct);
+
+        return [.. procMap.Values];
+    }
+
+    private static async Task TryDescribeResultSetAsync(
+        SqlConnection conn, StoredProcedureMetadata sp, CancellationToken ct)
+    {
+        try
+        {
+            var paramList = string.Join(", ",
+                sp.InputParameters.Select(p => $"{p.ParameterName} = NULL"));
+            var execStr = $"EXEC {sp.QualifiedName}" +
+                          (paramList.Length > 0 ? $" {paramList}" : "");
+
+            const string sql = """
+                SELECT name, system_type_name, is_nullable
+                FROM sys.dm_exec_describe_first_result_set(@exec, NULL, 0)
+                """;
+            await using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@exec", execStr);
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                var colName  = reader.IsDBNull(0) ? $"Col{sp.ResultColumns.Count + 1}" : reader.GetString(0);
+                var sqlType  = reader.IsDBNull(1) ? "nvarchar" : reader.GetString(1).Split('(')[0].Trim();
+                var nullable = !reader.IsDBNull(2) && reader.GetBoolean(2);
+                var (clrType, _) = MapClrType(sqlType, isNullable: nullable);
+                sp.ResultColumns.Add(new ProcResultColumnMetadata
+                {
+                    Name      = colName,
+                    DataType  = sqlType,
+                    ClrType   = clrType,
+                    IsNullable = nullable
+                });
+            }
+            sp.HasDescribableResult = sp.ResultColumns.Count > 0;
+        }
+        catch (Exception ex)
+        {
+            sp.HasDescribableResult = false;
+            sp.DescribeError        = ex.Message;
+        }
     }
 
     private static (string clrType, bool isNullable) MapClrType(string sqlType, bool isNullable)

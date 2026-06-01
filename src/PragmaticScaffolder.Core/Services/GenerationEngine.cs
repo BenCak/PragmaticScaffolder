@@ -20,6 +20,7 @@ public sealed class GenerationEngine
         r => new BlazorPageGenerator().Generate(r),
         r => new TestsGenerator().Generate(r),
         r => new ProjectFilesGenerator().Generate(r),
+        r => new StoredProcedureGenerator().Generate(r),
     ];
 
     /// <summary>Returns generated files without writing to disk — useful for preview.</summary>

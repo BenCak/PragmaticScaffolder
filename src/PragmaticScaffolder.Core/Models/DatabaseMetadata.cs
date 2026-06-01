@@ -8,4 +8,7 @@ public sealed class DatabaseMetadata
 
     public IEnumerable<TableMetadata> AllTables =>
         Schemas.SelectMany(s => s.Tables);
+
+    public IEnumerable<StoredProcedureMetadata> AllStoredProcedures =>
+        Schemas.SelectMany(s => s.StoredProcedures);
 }

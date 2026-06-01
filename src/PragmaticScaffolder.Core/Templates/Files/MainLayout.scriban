@@ -35,6 +35,13 @@
 {{- for f in features }}
             <MudNavLink Href="/{{ f.route_prefix }}" Icon="@Icons.Material.Filled.TableView">{{ f.feature_folder }}</MudNavLink>
 {{- end }}
+{{- if procs.size > 0 }}
+            <MudNavGroup Title="Search" Icon="@Icons.Material.Filled.Search" Expanded="true">
+{{-   for p in procs }}
+                <MudNavLink Href="/{{ p.page_route }}" Icon="@Icons.Material.Filled.ManageSearch">{{ p.nav_label }}</MudNavLink>
+{{-   end }}
+            </MudNavGroup>
+{{- end }}
         </MudNavMenu>
     </MudDrawer>
 

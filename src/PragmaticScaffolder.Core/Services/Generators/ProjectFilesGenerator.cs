@@ -18,6 +18,23 @@ public sealed class ProjectFilesGenerator
             RoutePrefix   = NamingHelper.ToCollectionName(t.Name, request.TablePrefix).ToLowerInvariant()
         }).ToList();
 
+        var procs = request.StoredProcedures.Select(sp =>
+        {
+            var (featureFolder, className, actionName) =
+                NamingHelper.ParseProcName(sp.Name, request.SpPrefix, request.TablePrefix);
+            var procClass = className + actionName;
+            return new
+            {
+                FeatureFolder   = featureFolder,
+                ProcClass       = procClass,
+                ApiClientClass  = procClass + "ApiClient",
+                ServiceClass    = procClass + "Service",
+                Route           = $"{featureFolder.ToLowerInvariant()}/{actionName.ToLowerInvariant()}",
+                PageRoute       = $"{featureFolder.ToLowerInvariant()}/{actionName.ToLowerInvariant()}",
+                NavLabel        = NamingHelper.ToLabel(featureFolder) + " — " + NamingHelper.ToLabel(actionName)
+            };
+        }).ToList();
+
         yield return Render($"src/{ns}.Shared/PagedResult.cs",
             "PagedResult", new { Namespace = $"{ns}.Shared" });
         yield return Render($"src/{ns}.Shared/{ns}.Shared.csproj",
@@ -38,7 +55,7 @@ public sealed class ProjectFilesGenerator
                 "BlazorTestProject", new { Namespace = ns });
 
         yield return Render($"src/{ns}.Api/Program.cs",
-            "ApiProgram", new { Namespace = ns, Features = features });
+            "ApiProgram", new { Namespace = ns, Features = features, Procs = procs });
         yield return Render($"src/{ns}.Api/appsettings.json",
             "AppSettings", new { Namespace = ns, ConnectionString = request.ConnectionString });
         yield return Render($"src/{ns}.Api/Properties/launchSettings.json",
@@ -47,7 +64,7 @@ public sealed class ProjectFilesGenerator
         yield return Render($"src/{ns}.Blazor/AppThemes.cs",
             "AppThemes", new { Namespace = ns });
         yield return Render($"src/{ns}.Blazor/Program.cs",
-            "BlazorProgram", new { Namespace = ns, Features = features });
+            "BlazorProgram", new { Namespace = ns, Features = features, Procs = procs });
         yield return Render($"src/{ns}.Blazor/appsettings.json",
             "BlazorAppSettings", new { Namespace = ns });
         yield return Render($"src/{ns}.Blazor/Properties/launchSettings.json",
@@ -57,13 +74,13 @@ public sealed class ProjectFilesGenerator
         yield return Render($"src/{ns}.Blazor/Routes.razor",
             "Routes", new { Namespace = ns });
         yield return Render($"src/{ns}.Blazor/Pages/Home.razor",
-            "HomePage", new { Namespace = ns, Features = features });
+            "HomePage", new { Namespace = ns, Features = features, Procs = procs });
         yield return Render($"src/{ns}.Blazor/_Imports.razor",
             "Imports", new { Namespace = ns });
         yield return Render($"src/{ns}.Blazor/wwwroot/app.css",
             "BlazorAppCss", new { Namespace = ns });
         yield return Render($"src/{ns}.Blazor/Components/Layout/MainLayout.razor",
-            "MainLayout", new { Namespace = ns, Features = features });
+            "MainLayout", new { Namespace = ns, Features = features, Procs = procs });
 
         yield return Render($"{ns}.sln",
             "Solution", new

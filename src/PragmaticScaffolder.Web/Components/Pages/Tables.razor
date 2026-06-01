@@ -67,8 +67,8 @@ else
         <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        Disabled="State.SelectedTableKeys.Count == 0"
-                       OnClick="@(() => Nav.NavigateTo("/generate"))">
-                Next — Generate (@State.SelectedTableKeys.Count selected)
+                       OnClick="@(() => Nav.NavigateTo("/procedures"))">
+                Next — Stored Procedures →
             </MudButton>
             <MudButton Href="/">Back</MudButton>
         </MudStack>

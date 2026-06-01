@@ -4,6 +4,9 @@ using {{ namespace }}.Data;
 {{- for f in features }}
 using {{ namespace }}.Api.Features.{{ f.feature_folder }};
 {{- end }}
+{{- for p in procs }}
+using {{ namespace }}.Api.Features.{{ p.feature_folder }};
+{{- end }}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +15,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 {{- for f in features }}
 builder.Services.AddScoped<{{ f.class_name }}Service>();
+{{- end }}
+{{- for p in procs }}
+builder.Services.AddScoped<{{ p.service_class }}>();
 {{- end }}
 
 builder.Services.AddCors(options =>
@@ -28,6 +34,9 @@ app.MapGet("/", () => Results.Ok(new { Name = "{{ namespace }}.Api", Status = "O
 
 {{- for f in features }}
 app.Map{{ f.class_name }}Endpoints();
+{{- end }}
+{{- for p in procs }}
+app.MapGroup("/api/{{ p.route }}").Map{{ p.proc_class }}Endpoints();
 {{- end }}
 
 app.Run();

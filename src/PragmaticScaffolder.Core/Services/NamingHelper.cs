@@ -150,6 +150,26 @@ public static partial class NamingHelper
     }
 
     /// <summary>
+    /// Parses a stored procedure name into feature folder, entity class name, and action name.
+    /// "usp_tblOrders_Search" with spPrefix="usp_" tablePrefix="tbl"
+    ///   → featureFolder="Orders", className="Order", actionName="Search"
+    /// </summary>
+    public static (string FeatureFolder, string ClassName, string ActionName) ParseProcName(
+        string procName, string spPrefix, string tablePrefix)
+    {
+        var withoutSp  = StripPrefix(procName, spPrefix);
+        var withoutTbl = StripPrefix(withoutSp, tablePrefix);
+        var idx        = withoutTbl.IndexOf('_');
+        var tablePart  = idx >= 0 ? withoutTbl[..idx]      : withoutTbl;
+        var actionPart = idx >= 0 ? withoutTbl[(idx + 1)..] : "Execute";
+        return (
+            FeatureFolder: ToCollectionName(tablePart),
+            ClassName:     ToClassName(tablePart),
+            ActionName:    ToPascalCase(actionPart)
+        );
+    }
+
+    /// <summary>
     /// Converts a PascalCase column name to a human-readable label.
     /// "CompanyName" → "Company Name", "CustomerID" → "Customer ID".
     /// </summary>
