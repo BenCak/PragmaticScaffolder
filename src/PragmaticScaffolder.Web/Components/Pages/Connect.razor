@@ -70,6 +70,15 @@
     private bool _busy;
     private string _connStr = string.Empty;
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await _form.Validate(); // enable the Connect button on pre-filled profiles
+            StateHasChanged();
+        }
+    }
+
     protected override void OnInitialized()
     {
         // Pre-fill from state if already connected, otherwise use the default test profile
