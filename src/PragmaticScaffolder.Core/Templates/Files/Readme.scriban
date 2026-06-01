@@ -1,0 +1,36 @@
+# {{ namespace }}
+
+Generated app structure:
+
+- `src/{{ namespace }}.Blazor`: MudBlazor UI and typed API clients.
+- `src/{{ namespace }}.Api`: Minimal API endpoints and feature services.
+- `src/{{ namespace }}.Data`: EF Core `AppDbContext` and database entities.
+- `src/{{ namespace }}.Shared`: DTOs and request contracts.
+- `tests/{{ namespace }}.Api.Tests`: API service tests.
+- `tests/{{ namespace }}.Blazor.Tests`: bUnit UI tests.
+
+## Run Locally
+
+Start the API:
+
+```bash
+dotnet run --project src/{{ namespace }}.Api/{{ namespace }}.Api.csproj
+```
+
+Start the Blazor UI:
+
+```bash
+dotnet run --project src/{{ namespace }}.Blazor/{{ namespace }}.Blazor.csproj
+```
+
+Run tests:
+
+```bash
+dotnet test
+```
+
+Run with Docker:
+
+```bash
+docker compose -f docker/docker-compose.yml up --build
+```

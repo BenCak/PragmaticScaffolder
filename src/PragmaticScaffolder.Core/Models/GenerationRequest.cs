@@ -1,0 +1,19 @@
+namespace PragmaticScaffolder.Core.Models;
+
+public sealed class GenerationRequest
+{
+    /// <summary>Root namespace for the generated app (e.g. "MyApp").</summary>
+    public string RootNamespace { get; set; } = string.Empty;
+
+    /// <summary>Folder where the generated solution will be written.</summary>
+    public string OutputPath { get; set; } = string.Empty;
+
+    /// <summary>Tables the user selected to scaffold.</summary>
+    public List<TableMetadata> Tables { get; set; } = [];
+
+    /// <summary>All tables in the database — used to resolve FK display names.</summary>
+    public List<TableMetadata> AllTables { get; set; } = [];
+
+    /// <summary>SQL Server connection string written into the generated appsettings.json.</summary>
+    public string ConnectionString { get; set; } = string.Empty;
+}

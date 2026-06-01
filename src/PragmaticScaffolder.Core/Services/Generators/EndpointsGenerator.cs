@@ -1,0 +1,55 @@
+using PragmaticScaffolder.Core.Models;
+using PragmaticScaffolder.Core.Templates;
+
+namespace PragmaticScaffolder.Core.Services.Generators;
+
+/// <summary>Generates Minimal API endpoint classes in the Api project.</summary>
+public sealed class EndpointsGenerator
+{
+    public IEnumerable<GeneratedFile> Generate(GenerationRequest request)
+    {
+        var allTableLookup = request.AllTables
+            .ToDictionary(t => $"{t.Schema}.{t.Name}", StringComparer.OrdinalIgnoreCase);
+
+        foreach (var table in request.Tables)
+        {
+            var className     = NamingHelper.ToClassName(table.Name);
+            var featureFolder = NamingHelper.ToCollectionName(table.Name);
+            var pkColumns     = table.PrimaryKeyColumns.ToList();
+            var fkDisplays    = DtoGenerator.BuildFkDisplays(table, allTableLookup);
+
+            var model = new
+            {
+                Namespace       = $"{request.RootNamespace}.Api.Features.{featureFolder}",
+                SharedNamespace = $"{request.RootNamespace}.Shared",
+                ClassName       = className,
+                FeatureFolder   = featureFolder,
+                RoutePrefix     = featureFolder.ToLowerInvariant(),
+                HasFkDisplay    = fkDisplays.Count > 0,
+                HasSinglePk     = pkColumns.Count == 1,
+                PkColumns       = pkColumns.Select(c => new
+                {
+                    c.Name,
+                    PropertyName    = NamingHelper.ToPropertyName(c.Name),
+                    c.ClrType,
+                    ParamName       = NamingHelper.ToParamName(NamingHelper.ToPropertyName(c.Name)),
+                    RouteConstraint = GetRouteConstraint(c.ClrType)
+                }).ToList()
+            };
+
+            yield return new GeneratedFile
+            {
+                RelativePath = $"src/{request.RootNamespace}.Api/Features/{featureFolder}/{className}Endpoints.cs",
+                Content      = TemplateLoader.Render("Endpoints", model)
+            };
+        }
+    }
+
+    private static string GetRouteConstraint(string clrType) => clrType.TrimEnd('?') switch
+    {
+        "int"  => ":int",
+        "long" => ":long",
+        "Guid" => ":guid",
+        _      => string.Empty
+    };
+}

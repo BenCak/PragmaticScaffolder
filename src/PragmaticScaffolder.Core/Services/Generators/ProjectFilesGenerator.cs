@@ -1,0 +1,82 @@
+using PragmaticScaffolder.Core.Models;
+using PragmaticScaffolder.Core.Templates;
+
+namespace PragmaticScaffolder.Core.Services.Generators;
+
+/// <summary>
+/// Generates solution-level files for the generated Blazor Server app.
+/// </summary>
+public sealed class ProjectFilesGenerator
+{
+    public IEnumerable<GeneratedFile> Generate(GenerationRequest request)
+    {
+        var ns = request.RootNamespace;
+        var features = request.Tables.Select(t => new
+        {
+            ClassName     = NamingHelper.ToClassName(t.Name),
+            FeatureFolder = NamingHelper.ToCollectionName(t.Name),
+            RoutePrefix   = NamingHelper.ToCollectionName(t.Name).ToLowerInvariant()
+        }).ToList();
+
+        yield return Render($"src/{ns}.Shared/PagedResult.cs",
+            "PagedResult", new { Namespace = $"{ns}.Shared" });
+        yield return Render($"src/{ns}.Shared/{ns}.Shared.csproj",
+            "SharedProject", new { Namespace = ns });
+        yield return Render($"src/{ns}.Data/{ns}.Data.csproj",
+            "DataProject", new { Namespace = ns });
+        yield return Render($"src/{ns}.Api/{ns}.Api.csproj",
+            "ApiProject", new { Namespace = ns });
+        yield return Render($"src/{ns}.Blazor/{ns}.Blazor.csproj",
+            "BlazorProject", new { Namespace = ns });
+
+        yield return Render($"tests/{ns}.Api.Tests/{ns}.Api.Tests.csproj",
+            "ApiTestProject", new { Namespace = ns });
+        yield return Render($"tests/{ns}.Blazor.Tests/{ns}.Blazor.Tests.csproj",
+            "BlazorTestProject", new { Namespace = ns });
+
+        yield return Render($"src/{ns}.Api/Program.cs",
+            "ApiProgram", new { Namespace = ns, Features = features });
+        yield return Render($"src/{ns}.Api/appsettings.json",
+            "AppSettings", new { Namespace = ns, ConnectionString = request.ConnectionString });
+        yield return Render($"src/{ns}.Api/Properties/launchSettings.json",
+            "ApiLaunchSettings", new { Namespace = ns });
+
+        yield return Render($"src/{ns}.Blazor/AppThemes.cs",
+            "AppThemes", new { Namespace = ns });
+        yield return Render($"src/{ns}.Blazor/Program.cs",
+            "BlazorProgram", new { Namespace = ns, Features = features });
+        yield return Render($"src/{ns}.Blazor/appsettings.json",
+            "BlazorAppSettings", new { Namespace = ns });
+        yield return Render($"src/{ns}.Blazor/Properties/launchSettings.json",
+            "BlazorLaunchSettings", new { Namespace = ns });
+        yield return Render($"src/{ns}.Blazor/App.razor",
+            "AppRazor", new { Namespace = ns });
+        yield return Render($"src/{ns}.Blazor/Routes.razor",
+            "Routes", new { Namespace = ns });
+        yield return Render($"src/{ns}.Blazor/Pages/Home.razor",
+            "HomePage", new { Namespace = ns, Features = features });
+        yield return Render($"src/{ns}.Blazor/_Imports.razor",
+            "Imports", new { Namespace = ns });
+        yield return Render($"src/{ns}.Blazor/wwwroot/app.css",
+            "BlazorAppCss", new { Namespace = ns });
+        yield return Render($"src/{ns}.Blazor/Components/Layout/MainLayout.razor",
+            "MainLayout", new { Namespace = ns, Features = features });
+
+        yield return Render($"{ns}.sln",
+            "Solution", new { Namespace = ns });
+        yield return Render("docker/Dockerfile.Api",
+            "DockerfileApi", new { Namespace = ns });
+        yield return Render("docker/Dockerfile.Blazor",
+            "DockerfileBlazor", new { Namespace = ns });
+        yield return Render("docker/docker-compose.yml",
+            "DockerCompose", new { Namespace = ns });
+        yield return Render("README.md",
+            "Readme", new { Namespace = ns, Features = features });
+    }
+
+    private static GeneratedFile Render(string path, string template, object model) => new()
+    {
+        RelativePath = path,
+        Content      = TemplateLoader.Render(template, model)
+    };
+}

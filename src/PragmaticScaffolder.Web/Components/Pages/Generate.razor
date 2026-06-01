@@ -1,0 +1,167 @@
+@page "/generate"
+@using PragmaticScaffolder.Core.Models
+@using PragmaticScaffolder.Core.Services
+@inject GenerationEngine Engine
+@inject ScaffolderState State
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Generate — Pragmatic Scaffolder</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-1">Step 3 — Generate</MudText>
+<MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
+    Review what will be generated, then click Generate to write the files to disk.
+</MudText>
+
+@if (State.SelectedTables.Count == 0)
+{
+    <MudAlert Severity="Severity.Warning">
+        No tables selected. <MudLink Href="/tables">Go back to Select Tables</MudLink>.
+    </MudAlert>
+}
+else
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudText Typo="Typo.subtitle1" Class="mb-2">Summary</MudText>
+        <MudSimpleTable Dense="true" Style="max-width:500px">
+            <tbody>
+                <tr><td>Namespace</td><td><strong>@State.RootNamespace</strong></td></tr>
+                <tr><td>Output</td><td><strong>@State.OutputPath</strong></td></tr>
+                <tr><td>Tables</td><td><strong>@State.SelectedTables.Count</strong></td></tr>
+            </tbody>
+        </MudSimpleTable>
+    </MudPaper>
+
+    @* Preview file list *@
+    @if (_preview is not null)
+    {
+        @if (_preview.Success && _preview.Files.Count > 0)
+        {
+            <MudPaper Class="pa-4 mb-4" Elevation="1">
+                <MudText Typo="Typo.subtitle1" Class="mb-2">
+                    Files to be generated (@_preview.Files.Count)
+                </MudText>
+                @foreach (var f in _preview.Files)
+                {
+                    <MudText Typo="Typo.body2" Class="ml-2 mb-1">
+                        <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" Class="mr-1" />
+                        @f.RelativePath
+                    </MudText>
+                }
+            </MudPaper>
+        }
+        else if (!_preview.Success)
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">
+                <MudText><strong>Preview failed:</strong></MudText>
+                <ul>
+                    @foreach (var e in _preview.Errors)
+                    {
+                        <li>@e</li>
+                    }
+                </ul>
+            </MudAlert>
+        }
+    }
+
+    @* Generate result *@
+    @if (_result is not null)
+    {
+        <MudAlert Severity="@(_result.Success ? Severity.Success : Severity.Error)" Class="mb-4">
+            @if (_result.Success)
+            {
+                <span>Done! @_result.Files.Count files written to <strong>@State.OutputPath</strong></span>
+            }
+            else
+            {
+                <MudText><strong>Generation failed:</strong></MudText>
+                <ul>
+                    @foreach (var e in _result.Errors)
+                    {
+                        <li>@e</li>
+                    }
+                </ul>
+            }
+        </MudAlert>
+    }
+
+    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+        <MudButton Href="/tables">Back</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="PreviewAsync" Disabled="_busy">Preview Files</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GenerateAsync" Disabled="_busy">
+            @(_busy ? "Generating…" : "Generate")
+        </MudButton>
+        @if (_busy)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+        }
+    </MudStack>
+}
+
+@code {
+    private bool _busy;
+    private GenerationResult? _preview;
+    private GenerationResult? _result;
+
+    private GenerationRequest BuildRequest() => new()
+    {
+        RootNamespace    = State.RootNamespace,
+        OutputPath       = State.OutputPath,
+        Tables           = State.SelectedTables,
+        AllTables        = State.Database?.AllTables.ToList() ?? [],
+        ConnectionString = State.ConnectionString
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (State.SelectedTables.Count == 0) return;
+        await RunPreviewAsync();
+    }
+
+    private async Task PreviewAsync()
+    {
+        _result = null;
+        await RunPreviewAsync();
+    }
+
+    private async Task RunPreviewAsync()
+    {
+        _busy = true;
+        await Task.Yield();
+        try
+        {
+            _preview = Engine.Preview(BuildRequest());
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Preview error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task GenerateAsync()
+    {
+        _busy = true;
+        await Task.Yield();
+        try
+        {
+            _result = Engine.Generate(BuildRequest());
+            _preview = null;
+            if (_result.Success)
+                Snackbar.Add($"Generated {_result.Files.Count} files!", Severity.Success);
+            else
+                Snackbar.Add("Generation completed with errors — see details below.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

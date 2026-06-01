@@ -1,0 +1,94 @@
+@page "/tables"
+@inject ScaffolderState State
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Select Tables — Pragmatic Scaffolder</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-1">Step 2 — Select Tables</MudText>
+<MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
+    Choose the tables you want to scaffold. One feature folder is generated per table.
+</MudText>
+
+@if (State.Database is null)
+{
+    <MudAlert Severity="Severity.Warning">
+        No database loaded. <MudLink Href="/">Go back to Connect</MudLink>.
+    </MudAlert>
+}
+else
+{
+    <MudPaper Class="pa-4" Elevation="2">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+            <MudTextField @bind-Value="_search" Placeholder="Filter tables…"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true" Clearable="true" Style="max-width:300px" />
+            <MudStack Row="true" Spacing="1">
+                <MudButton Size="Size.Small" OnClick="SelectAll">Select All</MudButton>
+                <MudButton Size="Size.Small" OnClick="ClearAll">Clear</MudButton>
+            </MudStack>
+        </MudStack>
+
+        @{
+            var totalTables = State.Database.Schemas.Sum(s => s.Tables.Count);
+        }
+        @if (totalTables == 0)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-3">
+                No tables found in <strong>@State.Database.DatabaseName</strong>.
+                Make sure your connection string includes <code>Database=yourdb</code> or <code>Initial Catalog=yourdb</code>
+                and that the database has user tables.
+                <MudLink Href="/">Go back to Connect</MudLink>.
+            </MudAlert>
+        }
+
+        @foreach (var schema in State.Database.Schemas)
+        {
+            var visibleTables = schema.Tables
+                .Where(t => string.IsNullOrEmpty(_search) ||
+                            t.Name.Contains(_search, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (!visibleTables.Any()) continue;
+
+            <MudText Typo="Typo.subtitle1" Class="mt-3 mb-1 mud-text-secondary">@schema.Name</MudText>
+            @foreach (var table in visibleTables)
+            {
+                var key = $"{table.Schema}.{table.Name}";
+                <MudCheckBox Value="State.SelectedTableKeys.Contains(key)"
+                             ValueChanged="(bool v) => Toggle(key, v)"
+                             Label="@table.Name" Dense="true" />
+            }
+        }
+
+        <MudDivider Class="my-4" />
+
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       Disabled="State.SelectedTableKeys.Count == 0"
+                       OnClick="@(() => Nav.NavigateTo("/generate"))">
+                Next — Generate (@State.SelectedTableKeys.Count selected)
+            </MudButton>
+            <MudButton Href="/">Back</MudButton>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    private string _search = string.Empty;
+
+    private void Toggle(string key, bool selected)
+    {
+        if (selected) State.SelectedTableKeys.Add(key);
+        else State.SelectedTableKeys.Remove(key);
+    }
+
+    private void SelectAll()
+    {
+        foreach (var t in State.Database?.AllTables ?? [])
+            State.SelectedTableKeys.Add($"{t.Schema}.{t.Name}");
+    }
+
+    private void ClearAll() => State.SelectedTableKeys.Clear();
+}

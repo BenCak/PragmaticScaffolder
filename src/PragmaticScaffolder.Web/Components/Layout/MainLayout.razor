@@ -1,0 +1,75 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider @bind-IsDarkMode="_isDark" Theme="_currentTheme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Color="Color.Primary">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="ml-3">Pragmatic Scaffolder</MudText>
+        <MudSpacer />
+
+        @* Palette selector *@
+        <MudMenu Icon="@Icons.Material.Filled.Palette" Color="Color.Inherit"
+                 Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+            @foreach (var t in _themes)
+            {
+                <MudMenuItem OnClick="@(() => _currentTheme = t.Theme)">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Circle"
+                                 Style="@($"color:{t.Swatch}")" Size="Size.Small" />
+                        <MudText>@t.Name</MudText>
+                    </MudStack>
+                </MudMenuItem>
+            }
+        </MudMenu>
+
+        @* Dark / light toggle *@
+        <MudTooltip Text="@(_isDark ? "Light mode" : "Dark mode")">
+            <MudIconButton Icon="@(_isDark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                           Color="Color.Inherit" OnClick="@(() => _isDark = !_isDark)" />
+        </MudTooltip>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always">
+        <MudNavMenu>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Cable">
+                1. Connect
+            </MudNavLink>
+            <MudNavLink Href="/tables" Icon="@Icons.Material.Filled.TableView">
+                2. Select Tables
+            </MudNavLink>
+            <MudNavLink Href="/generate" Icon="@Icons.Material.Filled.Build">
+                3. Generate
+            </MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDark;
+    private MudTheme _currentTheme = Themes.Default;
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private sealed record ThemeOption(string Name, MudTheme Theme, string Swatch);
+
+    private readonly ThemeOption[] _themes =
+    [
+        new("Default", Themes.Default, "#594AE2"),
+        new("Blue",    Themes.Blue,    "#1565C0"),
+        new("Green",   Themes.Green,   "#2E7D32"),
+        new("Orange",  Themes.Orange,  "#E65100"),
+        new("Purple",  Themes.Purple,  "#6A1B9A"),
+    ];
+}
