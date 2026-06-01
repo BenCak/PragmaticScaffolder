@@ -22,8 +22,7 @@
 else
 {
     <MudPaper Class="pa-4 mb-4" Elevation="2">
-        <MudText Typo="Typo.subtitle1" Class="mb-2">Summary</MudText>
-        <MudSimpleTable Dense="true" Style="max-width:500px" Class="mb-4">
+        <MudSimpleTable Dense="true" Style="max-width:500px" Class="mb-3">
             <tbody>
                 <tr><td>Namespace</td><td><strong>@State.RootNamespace</strong></td></tr>
                 <tr><td>Output</td><td><strong>@State.OutputPath</strong></td></tr>
@@ -31,38 +30,88 @@ else
             </tbody>
         </MudSimpleTable>
         <MudText Typo="Typo.subtitle2" Class="mb-1">Generate test projects</MudText>
-        <MudCheckBox @bind-Value="State.GenerateApiTests" Label="API Tests (xUnit service tests)" Dense="true" />
+        <MudCheckBox @bind-Value="State.GenerateApiTests"    Label="API Tests (xUnit service tests)"      Dense="true" />
         <MudCheckBox @bind-Value="State.GenerateBlazorTests" Label="Blazor Tests (bUnit component tests)" Dense="true" />
     </MudPaper>
 
-    @* Preview file list *@
+    @* ── Tree + Preview ──────────────────────────────────────────────────── *@
     @if (_preview is not null)
     {
         @if (_preview.Success && _preview.Files.Count > 0)
         {
-            <MudPaper Class="pa-4 mb-4" Elevation="1">
-                <MudText Typo="Typo.subtitle1" Class="mb-2">
-                    Files to be generated (@_preview.Files.Count)
-                </MudText>
-                @foreach (var f in _preview.Files)
-                {
-                    <MudText Typo="Typo.body2" Class="ml-2 mb-1">
-                        <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" Class="mr-1" />
-                        @f.RelativePath
-                    </MudText>
-                }
+            <MudText Typo="Typo.subtitle2" Class="mb-2">
+                @_preview.Files.Count files to be generated — select a file to preview its content
+            </MudText>
+
+            <MudPaper Elevation="1" Class="mb-4" Style="height:580px; display:flex; overflow:hidden;">
+
+                @* Left: file tree *@
+                <div style="width:320px; min-width:320px; border-right:1px solid var(--mud-palette-divider);
+                            overflow-y:auto; padding:8px 0;">
+                    @foreach (var item in _flatList)
+                    {
+                        var indent = item.Depth * 16 + 8;
+                        if (item.Node.IsFile)
+                        {
+                            var isSelected = item.Node == _selectedNode;
+                            <div style="display:flex; align-items:center; padding:3px 8px 3px @(indent)px;
+                                        cursor:pointer; border-radius:4px; font-size:0.82rem;
+                                        background:@(isSelected ? "var(--mud-palette-primary-lighten)" : "transparent");
+                                        color:@(isSelected ? "var(--mud-palette-primary-text)" : "inherit");"
+                                 @onclick="@(() => _selectedNode = item.Node)">
+                                <MudIcon Icon="@GetFileIcon(item.Node.Name)" Size="Size.Small"
+                                         Style="margin-right:5px; flex-shrink:0; opacity:0.7;" />
+                                <span>@item.Node.Name</span>
+                            </div>
+                        }
+                        else
+                        {
+                            var open = _expanded.Contains(item.Node.Path);
+                            <div style="display:flex; align-items:center; padding:3px 8px 3px @(indent)px;
+                                        cursor:pointer; border-radius:4px; font-size:0.82rem; font-weight:600;"
+                                 @onclick="@(() => ToggleFolder(item.Node))">
+                                <MudIcon Icon="@(open ? Icons.Material.Filled.FolderOpen : Icons.Material.Filled.Folder)"
+                                         Color="Color.Warning" Size="Size.Small"
+                                         Style="margin-right:5px; flex-shrink:0;" />
+                                <span style="flex:1;">@item.Node.Name</span>
+                                <MudIcon Icon="@(open ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)"
+                                         Size="Size.Small" Style="opacity:0.5;" />
+                            </div>
+                        }
+                    }
+                </div>
+
+                @* Right: file content preview *@
+                <div style="flex:1; overflow:auto; display:flex; flex-direction:column;">
+                    @if (_selectedNode is not null)
+                    {
+                        <div style="padding:8px 16px; border-bottom:1px solid var(--mud-palette-divider);
+                                    font-size:0.78rem; font-family:monospace; color:var(--mud-palette-text-secondary);
+                                    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            @_selectedNode.RelativePath
+                        </div>
+                        <pre style="margin:0; padding:12px 16px; font-size:0.8rem; overflow:auto; flex:1;
+                                    font-family:'Cascadia Code','Consolas','Courier New',monospace;
+                                    line-height:1.5; white-space:pre;">@_selectedNode.Content</pre>
+                    }
+                    else
+                    {
+                        <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+                            <MudText Color="Color.Secondary" Typo="Typo.body2">
+                                <MudIcon Icon="@Icons.Material.Filled.TouchApp" Class="mr-1" />
+                                Select a file from the tree to preview its content
+                            </MudText>
+                        </div>
+                    }
+                </div>
+
             </MudPaper>
         }
         else if (!_preview.Success)
         {
             <MudAlert Severity="Severity.Error" Class="mb-4">
-                <MudText><strong>Preview failed:</strong></MudText>
-                <ul>
-                    @foreach (var e in _preview.Errors)
-                    {
-                        <li>@e</li>
-                    }
-                </ul>
+                <strong>Preview failed:</strong>
+                <ul>@foreach (var e in _preview.Errors) { <li>@e</li> }</ul>
             </MudAlert>
         }
     }
@@ -77,13 +126,8 @@ else
             }
             else
             {
-                <MudText><strong>Generation failed:</strong></MudText>
-                <ul>
-                    @foreach (var e in _result.Errors)
-                    {
-                        <li>@e</li>
-                    }
-                </ul>
+                <strong>Generation failed:</strong>
+                <ul>@foreach (var e in _result.Errors) { <li>@e</li> }</ul>
             }
         </MudAlert>
     }
@@ -94,35 +138,58 @@ else
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GenerateAsync" Disabled="_busy">
             @(_busy ? "Generating…" : "Generate")
         </MudButton>
-        @if (_busy)
-        {
-            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-        }
+        @if (_busy) { <MudProgressCircular Size="Size.Small" Indeterminate="true" /> }
     </MudStack>
 }
 
 @code {
-    private bool _busy;
-    private GenerationResult? _preview;
-    private GenerationResult? _result;
+    // ── Tree model ──────────────────────────────────────────────────────────
 
-    private GenerationRequest BuildRequest() => new()
+    private sealed class TreeNode
     {
-        RootNamespace    = State.RootNamespace,
-        OutputPath       = State.OutputPath,
-        Tables           = State.SelectedTables,
-        AllTables        = State.Database?.AllTables.ToList() ?? [],
-        ConnectionString    = State.ConnectionString,
-        TablePrefix         = State.TablePrefix,
-        GenerateApiTests    = State.GenerateApiTests,
-        GenerateBlazorTests = State.GenerateBlazorTests
-    };
+        public string  Name         { get; init; } = "";
+        public string  Path         { get; init; } = "";  // unique folder path key
+        public string? RelativePath { get; init; }        // non-null → file node
+        public string? Content      { get; init; }
+        public List<TreeNode> Children { get; } = [];
+        public bool IsFile => RelativePath is not null;
+    }
+
+    private sealed record FlatItem(TreeNode Node, int Depth);
+
+    // ── State ───────────────────────────────────────────────────────────────
+
+    private bool               _busy;
+    private GenerationResult?  _preview;
+    private GenerationResult?  _result;
+    private List<TreeNode>     _treeRoots  = [];
+    private readonly HashSet<string> _expanded = [];
+    private List<FlatItem>     _flatList   = [];
+    private TreeNode?          _selectedNode;
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────
 
     protected override async Task OnInitializedAsync()
     {
         if (State.SelectedTables.Count == 0) return;
         await RunPreviewAsync();
     }
+
+    // ── Request builder ──────────────────────────────────────────────────────
+
+    private GenerationRequest BuildRequest() => new()
+    {
+        RootNamespace       = State.RootNamespace,
+        OutputPath          = State.OutputPath,
+        Tables              = State.SelectedTables,
+        AllTables           = State.Database?.AllTables.ToList() ?? [],
+        ConnectionString    = State.ConnectionString,
+        TablePrefix         = State.TablePrefix,
+        GenerateApiTests    = State.GenerateApiTests,
+        GenerateBlazorTests = State.GenerateBlazorTests
+    };
+
+    // ── Preview / Generate ───────────────────────────────────────────────────
 
     private async Task PreviewAsync()
     {
@@ -137,6 +204,7 @@ else
         try
         {
             _preview = Engine.Preview(BuildRequest());
+            RebuildTree();
         }
         catch (Exception ex)
         {
@@ -154,8 +222,9 @@ else
         await Task.Yield();
         try
         {
-            _result = Engine.Generate(BuildRequest());
+            _result  = Engine.Generate(BuildRequest());
             _preview = null;
+            _treeRoots = []; _flatList = []; _selectedNode = null;
             if (_result.Success)
                 Snackbar.Add($"Generated {_result.Files.Count} files!", Severity.Success);
             else
@@ -170,4 +239,103 @@ else
             _busy = false;
         }
     }
+
+    // ── Tree building ────────────────────────────────────────────────────────
+
+    private void RebuildTree()
+    {
+        _selectedNode = null;
+        _expanded.Clear();
+
+        if (_preview?.Files is null or { Count: 0 })
+        {
+            _treeRoots = [];
+            _flatList  = [];
+            return;
+        }
+
+        _treeRoots = BuildTree(_preview.Files);
+
+        // Auto-expand the first two levels
+        foreach (var root in _treeRoots)
+        {
+            _expanded.Add(root.Path);
+            foreach (var child in root.Children.Where(c => !c.IsFile))
+                _expanded.Add(child.Path);
+        }
+
+        RefreshFlatList();
+    }
+
+    private static List<TreeNode> BuildTree(List<GeneratedFile> files)
+    {
+        var root = new TreeNode { Name = "__root__", Path = "" };
+        foreach (var file in files.OrderBy(f => f.RelativePath))
+        {
+            var parts   = file.RelativePath.Split('/');
+            var current = root;
+            var pathSoFar = "";
+            for (var i = 0; i < parts.Length; i++)
+            {
+                var part  = parts[i];
+                pathSoFar = pathSoFar.Length == 0 ? part : $"{pathSoFar}/{part}";
+                var isLast   = i == parts.Length - 1;
+                var existing = current.Children.FirstOrDefault(c => c.Name == part);
+                if (existing is null)
+                {
+                    existing = new TreeNode
+                    {
+                        Name         = part,
+                        Path         = pathSoFar,
+                        RelativePath = isLast ? file.RelativePath : null,
+                        Content      = isLast ? file.Content      : null
+                    };
+                    current.Children.Add(existing);
+                }
+                current = existing;
+            }
+        }
+        return root.Children;
+    }
+
+    private void ToggleFolder(TreeNode node)
+    {
+        if (!_expanded.Remove(node.Path))
+            _expanded.Add(node.Path);
+        RefreshFlatList();
+    }
+
+    private void RefreshFlatList()
+    {
+        var result = new List<FlatItem>();
+        Flatten(_treeRoots, 0, result);
+        _flatList = result;
+    }
+
+    private void Flatten(IEnumerable<TreeNode> nodes, int depth, List<FlatItem> result)
+    {
+        // folders first, then files, both alphabetical
+        foreach (var node in nodes.OrderBy(n => n.IsFile).ThenBy(n => n.Name))
+        {
+            result.Add(new FlatItem(node, depth));
+            if (!node.IsFile && _expanded.Contains(node.Path))
+                Flatten(node.Children, depth + 1, result);
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static string GetFileIcon(string name) =>
+        Path.GetExtension(name).ToLowerInvariant() switch
+        {
+            ".cs"            => Icons.Material.Filled.Code,
+            ".razor"         => Icons.Material.Filled.Web,
+            ".json"          => Icons.Material.Filled.DataObject,
+            ".sln"           => Icons.Material.Filled.AccountTree,
+            ".csproj"        => Icons.Material.Filled.Build,
+            ".md"            => Icons.Material.Filled.Article,
+            ".yml" or ".yaml"=> Icons.Material.Filled.Settings,
+            ".css"           => Icons.Material.Filled.Brush,
+            _                => Icons.Material.Filled.InsertDriveFile
+        };
 }
