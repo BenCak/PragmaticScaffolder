@@ -16,13 +16,13 @@
 {{- for p in input_params }}
 {{-   if p.is_date_type }}
         <MudItem xs="6">
-            <MudDatePicker Label="{{ p.label }}" FullWidth="true"
+            <MudDatePicker Label="{{ p.label }}" FullWidth="@true"
                            Date="@(_req.{{ p.property_name }} is DateTime d_{{ for.index }} ? (DateTime?)d_{{ for.index }} : null)"
                            DateChanged="@((DateTime? v) => _req.{{ p.property_name }} = v)" />
         </MudItem>
 {{-   else if p.is_numeric }}
         <MudItem xs="6">
-            <MudNumericField @bind-Value="_req.{{ p.property_name }}" Label="{{ p.label }}" FullWidth="true" />
+            <MudNumericField @bind-Value="_req.{{ p.property_name }}" Label="{{ p.label }}" FullWidth="@true" />
         </MudItem>
 {{-   else if p.is_bool }}
         <MudItem xs="6">
@@ -30,7 +30,7 @@
         </MudItem>
 {{-   else }}
         <MudItem xs="6">
-            <MudTextField @bind-Value="_req.{{ p.property_name }}" Label="{{ p.label }}" FullWidth="true" />
+            <MudTextField @bind-Value="_req.{{ p.property_name }}" Label="{{ p.label }}" FullWidth="@true" />
         </MudItem>
 {{-   end }}
 {{- end }}
