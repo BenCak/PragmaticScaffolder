@@ -7,7 +7,8 @@ public sealed record ConnectionProfile(
     string Icon,
     string ConnectionString,
     string DefaultNamespace,
-    string DefaultOutputPath
+    string DefaultOutputPath,
+    string TablePrefix = ""
 );
 
 /// <summary>Built-in quick-connect profiles for local development.</summary>

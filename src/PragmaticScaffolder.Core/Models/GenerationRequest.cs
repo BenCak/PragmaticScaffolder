@@ -16,4 +16,13 @@ public sealed class GenerationRequest
 
     /// <summary>SQL Server connection string written into the generated appsettings.json.</summary>
     public string ConnectionString { get; set; } = string.Empty;
+
+    /// <summary>Table name prefix to strip from generated class/route names (e.g. "tbl" turns "tblCustomer" → "Customer").</summary>
+    public string TablePrefix { get; set; } = string.Empty;
+
+    /// <summary>Whether to generate the Api.Tests project and test stubs.</summary>
+    public bool GenerateApiTests { get; set; } = true;
+
+    /// <summary>Whether to generate the Blazor.Tests project and test stubs.</summary>
+    public bool GenerateBlazorTests { get; set; } = true;
 }

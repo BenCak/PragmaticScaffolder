@@ -13,8 +13,8 @@ public sealed class DtoGenerator
 
         foreach (var table in request.Tables)
         {
-            var className     = NamingHelper.ToClassName(table.Name);
-            var featureFolder = NamingHelper.ToCollectionName(table.Name);
+            var className     = NamingHelper.ToClassName(table.Name, request.TablePrefix);
+            var featureFolder = NamingHelper.ToCollectionName(table.Name, request.TablePrefix);
 
             var dtoColumns = table.Columns
                 .Where(c => !c.IsComputed)
@@ -32,7 +32,7 @@ public sealed class DtoGenerator
                     c.DataType
                 }).ToList();
 
-            var fkDisplays = BuildFkDisplays(table, allTableLookup);
+            var fkDisplays = BuildFkDisplays(table, allTableLookup, request.TablePrefix);
 
             var model = new
             {
@@ -69,7 +69,8 @@ public sealed class DtoGenerator
 
     internal static List<FkDisplay> BuildFkDisplays(
         TableMetadata table,
-        Dictionary<string, TableMetadata> allTableLookup)
+        Dictionary<string, TableMetadata> allTableLookup,
+        string prefix = "")
     {
         var result = new List<FkDisplay>();
         var joinIndex = 0;
@@ -78,11 +79,11 @@ public sealed class DtoGenerator
             var key = $"{fk.ReferencedSchema}.{fk.ReferencedTable}";
             if (!allTableLookup.TryGetValue(key, out var refTable)) continue;
 
-            var displayCol = NamingHelper.FindDisplayColumn(refTable);
+            var displayCol = NamingHelper.FindDisplayColumn(refTable, prefix);
             if (displayCol is null) continue;
 
             joinIndex++;
-            var refClassName = NamingHelper.ToClassName(refTable.Name);
+            var refClassName = NamingHelper.ToClassName(refTable.Name, prefix);
             var aliasBase = $"_{refClassName.ToLowerInvariant()[..Math.Min(3, refClassName.Length)]}";
             var aliasSuffix = joinIndex == 1 ? string.Empty : joinIndex.ToString();
             var fkNullable   = table.Columns
@@ -95,7 +96,7 @@ public sealed class DtoGenerator
                 FkPropertyName      = NamingHelper.ToPropertyName(fk.ColumnName),
                 FkIsNullable        = fkNullable,
                 RefClassName        = refClassName,
-                RefSetName          = NamingHelper.ToCollectionName(refTable.Name),
+                RefSetName          = NamingHelper.ToCollectionName(refTable.Name, prefix),
                 RefPkPropertyName   = NamingHelper.ToPropertyName(fk.ReferencedColumn),
                 DisplayColumnName   = displayCol.Name,
                 DisplayPropertyName = NamingHelper.ToPropertyName(displayCol.Name),

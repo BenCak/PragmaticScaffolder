@@ -43,6 +43,10 @@
                       Required="true" RequiredError="Output folder is required." Class="mb-4"
                       HelperText="The generated solution will be written here." />
 
+        <MudTextField @bind-Value="State.TablePrefix" Label="Table Prefix to Strip"
+                      Placeholder="tbl" FullWidth="true" Variant="Variant.Outlined" Class="mb-4"
+                      HelperText='Optional. Strips this prefix from table names in generated code (e.g. "tbl" turns "tblCustomer" → "Customer").' />
+
         <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        Disabled="_busy || !_valid" OnClick="ConnectAsync">
@@ -80,6 +84,7 @@
         _connStr              = profile.ConnectionString;
         State.RootNamespace   = profile.DefaultNamespace;
         State.OutputPath      = profile.DefaultOutputPath;
+        State.TablePrefix     = profile.TablePrefix;
     }
 
     private async Task ConnectAsync()

@@ -13,8 +13,8 @@ public sealed class DbContextGenerator
             Namespace  = $"{request.RootNamespace}.Data",
             Entities   = request.Tables.Select(t => new
             {
-                ClassName = NamingHelper.ToClassName(t.Name),
-                SetName   = NamingHelper.ToCollectionName(t.Name),
+                ClassName = NamingHelper.ToClassName(t.Name, request.TablePrefix),
+                SetName   = NamingHelper.ToCollectionName(t.Name, request.TablePrefix),
                 t.Schema,
                 t.Name
             }).ToList()

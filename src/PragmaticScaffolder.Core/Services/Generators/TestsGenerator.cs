@@ -14,8 +14,8 @@ public sealed class TestsGenerator
 
         foreach (var table in request.Tables)
         {
-            var className     = NamingHelper.ToClassName(table.Name);
-            var featureFolder = NamingHelper.ToCollectionName(table.Name);
+            var className     = NamingHelper.ToClassName(table.Name, request.TablePrefix);
+            var featureFolder = NamingHelper.ToCollectionName(table.Name, request.TablePrefix);
             var pkColumns     = table.PrimaryKeyColumns.ToList();
 
             // Columns that go into CreateRequest (non-identity)
@@ -54,17 +54,19 @@ public sealed class TestsGenerator
                 CreateColumns   = createColumns
             };
 
-            yield return new GeneratedFile
-            {
-                RelativePath = $"tests/{ns}.Api.Tests/{featureFolder}/{featureFolder}ServiceTests.cs",
-                Content      = TemplateLoader.Render("ApiServiceTests", model)
-            };
+            if (request.GenerateApiTests)
+                yield return new GeneratedFile
+                {
+                    RelativePath = $"tests/{ns}.Api.Tests/{featureFolder}/{featureFolder}ServiceTests.cs",
+                    Content      = TemplateLoader.Render("ApiServiceTests", model)
+                };
 
-            yield return new GeneratedFile
-            {
-                RelativePath = $"tests/{ns}.Blazor.Tests/{featureFolder}/{featureFolder}PageTests.cs",
-                Content      = TemplateLoader.Render("BlazorPageTests", model)
-            };
+            if (request.GenerateBlazorTests)
+                yield return new GeneratedFile
+                {
+                    RelativePath = $"tests/{ns}.Blazor.Tests/{featureFolder}/{featureFolder}PageTests.cs",
+                    Content      = TemplateLoader.Render("BlazorPageTests", model)
+                };
         }
     }
 

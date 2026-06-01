@@ -21,10 +21,10 @@ public sealed class BlazorPageGenerator
 
         foreach (var table in request.Tables)
         {
-            var className     = NamingHelper.ToClassName(table.Name);
-            var featureFolder = NamingHelper.ToCollectionName(table.Name);
+            var className     = NamingHelper.ToClassName(table.Name, request.TablePrefix);
+            var featureFolder = NamingHelper.ToCollectionName(table.Name, request.TablePrefix);
             var pkColumns     = table.PrimaryKeyColumns.ToList();
-            var fkDisplays    = DtoGenerator.BuildFkDisplays(table, allTableLookup);
+            var fkDisplays    = DtoGenerator.BuildFkDisplays(table, allTableLookup, request.TablePrefix);
             var hasFkDisplay  = fkDisplays.Count > 0;
 
             var fkColumnNames = fkDisplays

@@ -28,11 +28,19 @@ public static partial class NamingHelper
     };
 
     /// <summary>Convert a table name to a PascalCase singular class name.</summary>
-    public static string ToClassName(string tableName)
+    public static string ToClassName(string tableName, string prefix = "")
     {
-        var pascal = ToPascalCase(tableName);
+        var pascal = ToPascalCase(StripPrefix(tableName, prefix));
         var singular = Singularize(pascal);
         return char.IsDigit(singular[0]) ? $"Entity{singular}" : singular;
+    }
+
+    private static string StripPrefix(string name, string prefix)
+    {
+        if (string.IsNullOrEmpty(prefix)) return name;
+        return name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            ? name[prefix.Length..]
+            : name;
     }
 
     /// <summary>Convert a column name to a PascalCase property name.</summary>
@@ -45,10 +53,10 @@ public static partial class NamingHelper
     }
 
     /// <summary>Plural PascalCase class name for a collection property (singularizes first).</summary>
-    public static string ToCollectionName(string tableName)
+    public static string ToCollectionName(string tableName, string prefix = "")
     {
-        var singular = ToClassName(tableName);   // e.g. "Customers" → "Customer"
-        return Pluralize(singular);              // e.g. "Customer" → "Customers"
+        var singular = ToClassName(tableName, prefix);
+        return Pluralize(singular);
     }
 
     /// <summary>camelCase parameter name safe to use in method signatures.</summary>
@@ -116,9 +124,9 @@ public static partial class NamingHelper
     /// Prefers columns named "Name", "[Entity]Name", "Title" — falls back to first non-PK string column.
     /// Returns null if no suitable string column exists.
     /// </summary>
-    public static Models.ColumnMetadata? FindDisplayColumn(Models.TableMetadata refTable)
+    public static Models.ColumnMetadata? FindDisplayColumn(Models.TableMetadata refTable, string prefix = "")
     {
-        var refEntity = ToClassName(refTable.Name);
+        var refEntity = ToClassName(refTable.Name, prefix);
         var stringCols = refTable.Columns
             .Where(c => !c.IsPrimaryKey && c.ClrType is "string" or "string?")
             .ToList();

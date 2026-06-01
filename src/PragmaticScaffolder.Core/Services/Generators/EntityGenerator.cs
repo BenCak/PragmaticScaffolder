@@ -10,7 +10,7 @@ public sealed class EntityGenerator
     {
         foreach (var table in request.Tables)
         {
-            var className = NamingHelper.ToClassName(table.Name);
+            var className = NamingHelper.ToClassName(table.Name, request.TablePrefix);
             var pkColumns = table.PrimaryKeyColumns.ToList();
             var model = new
             {

@@ -13,6 +13,9 @@ public sealed class ScaffolderState
     public HashSet<string> SelectedTableKeys { get; set; } = [];  // "schema.table"
     public string RootNamespace { get; set; } = "MyApp";
     public string OutputPath { get; set; } = string.Empty;
+    public string TablePrefix { get; set; } = string.Empty;
+    public bool GenerateApiTests { get; set; } = true;
+    public bool GenerateBlazorTests { get; set; } = true;
 
     public List<TableMetadata> SelectedTables =>
         Database?.AllTables

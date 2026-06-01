@@ -13,9 +13,9 @@ public sealed class ProjectFilesGenerator
         var ns = request.RootNamespace;
         var features = request.Tables.Select(t => new
         {
-            ClassName     = NamingHelper.ToClassName(t.Name),
-            FeatureFolder = NamingHelper.ToCollectionName(t.Name),
-            RoutePrefix   = NamingHelper.ToCollectionName(t.Name).ToLowerInvariant()
+            ClassName     = NamingHelper.ToClassName(t.Name, request.TablePrefix),
+            FeatureFolder = NamingHelper.ToCollectionName(t.Name, request.TablePrefix),
+            RoutePrefix   = NamingHelper.ToCollectionName(t.Name, request.TablePrefix).ToLowerInvariant()
         }).ToList();
 
         yield return Render($"src/{ns}.Shared/PagedResult.cs",
@@ -29,10 +29,13 @@ public sealed class ProjectFilesGenerator
         yield return Render($"src/{ns}.Blazor/{ns}.Blazor.csproj",
             "BlazorProject", new { Namespace = ns });
 
-        yield return Render($"tests/{ns}.Api.Tests/{ns}.Api.Tests.csproj",
-            "ApiTestProject", new { Namespace = ns });
-        yield return Render($"tests/{ns}.Blazor.Tests/{ns}.Blazor.Tests.csproj",
-            "BlazorTestProject", new { Namespace = ns });
+        if (request.GenerateApiTests)
+            yield return Render($"tests/{ns}.Api.Tests/{ns}.Api.Tests.csproj",
+                "ApiTestProject", new { Namespace = ns });
+
+        if (request.GenerateBlazorTests)
+            yield return Render($"tests/{ns}.Blazor.Tests/{ns}.Blazor.Tests.csproj",
+                "BlazorTestProject", new { Namespace = ns });
 
         yield return Render($"src/{ns}.Api/Program.cs",
             "ApiProgram", new { Namespace = ns, Features = features });
@@ -63,7 +66,12 @@ public sealed class ProjectFilesGenerator
             "MainLayout", new { Namespace = ns, Features = features });
 
         yield return Render($"{ns}.sln",
-            "Solution", new { Namespace = ns });
+            "Solution", new
+            {
+                Namespace           = ns,
+                GenerateApiTests    = request.GenerateApiTests,
+                GenerateBlazorTests = request.GenerateBlazorTests
+            });
         yield return Render("docker/Dockerfile.Api",
             "DockerfileApi", new { Namespace = ns });
         yield return Render("docker/Dockerfile.Blazor",

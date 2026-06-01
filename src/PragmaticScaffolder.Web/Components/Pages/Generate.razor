@@ -23,13 +23,16 @@ else
 {
     <MudPaper Class="pa-4 mb-4" Elevation="2">
         <MudText Typo="Typo.subtitle1" Class="mb-2">Summary</MudText>
-        <MudSimpleTable Dense="true" Style="max-width:500px">
+        <MudSimpleTable Dense="true" Style="max-width:500px" Class="mb-4">
             <tbody>
                 <tr><td>Namespace</td><td><strong>@State.RootNamespace</strong></td></tr>
                 <tr><td>Output</td><td><strong>@State.OutputPath</strong></td></tr>
                 <tr><td>Tables</td><td><strong>@State.SelectedTables.Count</strong></td></tr>
             </tbody>
         </MudSimpleTable>
+        <MudText Typo="Typo.subtitle2" Class="mb-1">Generate test projects</MudText>
+        <MudCheckBox @bind-Value="State.GenerateApiTests" Label="API Tests (xUnit service tests)" Dense="true" />
+        <MudCheckBox @bind-Value="State.GenerateBlazorTests" Label="Blazor Tests (bUnit component tests)" Dense="true" />
     </MudPaper>
 
     @* Preview file list *@
@@ -109,7 +112,10 @@ else
         OutputPath       = State.OutputPath,
         Tables           = State.SelectedTables,
         AllTables        = State.Database?.AllTables.ToList() ?? [],
-        ConnectionString = State.ConnectionString
+        ConnectionString    = State.ConnectionString,
+        TablePrefix         = State.TablePrefix,
+        GenerateApiTests    = State.GenerateApiTests,
+        GenerateBlazorTests = State.GenerateBlazorTests
     };
 
     protected override async Task OnInitializedAsync()
