@@ -34,12 +34,26 @@ public class {{ proc_class }}Service(AppDbContext db)
             using var reader = await cmd.ExecuteReaderAsync(ct);
             while (await reader.ReadAsync(ct))
             {
-                all.Add(new {{ proc_class }}Result(
+                try
+                {
+                    all.Add(new {{ proc_class }}Result(
 {{- for col in result_columns }}
-                    reader["{{ col.name }}"] is DBNull ? {{ col.default_value }} : ({{ col.base_clr_type }})reader["{{ col.name }}"]{{ if !for.last }},{{ end }}
+                        reader["{{ col.name }}"] is DBNull ? {{ col.default_value }} : ({{ col.base_clr_type }})reader["{{ col.name }}"]{{ if !for.last }},{{ end }}
 {{- end }}
-                ));
+                    ));
+                }
+                catch (InvalidCastException ex)
+                {
+                    throw new InvalidOperationException(
+                        $"Type mismatch reading result from {{ qualified_proc_name }}. " +
+                        $"Check that the SP result columns match the generated DTO. Detail: {ex.Message}", ex);
+                }
             }
+        }
+        catch (SqlException ex)
+        {
+            throw new InvalidOperationException(
+                $"SQL error executing {{ qualified_proc_name }}: {ex.Message} (Number: {ex.Number})", ex);
         }
         finally
         {
