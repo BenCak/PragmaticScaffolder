@@ -76,11 +76,26 @@ else
                                     @if (sp.HasDescribableResult)
                                     {
                                         var (ff, cn, an) = ParseName(sp.Name);
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                            → @cn@an &nbsp;·&nbsp;
-                                            @sp.InputParameters.Count() input param(s) &nbsp;·&nbsp;
-                                            @sp.ResultColumns.Count col(s)
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">
+                                            → @cn@an &nbsp;·&nbsp; @sp.ResultColumns.Count result col(s)
                                         </MudText>
+                                        @if (sp.InputParameters.Any())
+                                        {
+                                            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="ml-0">
+                                                @foreach (var p in sp.InputParameters)
+                                                {
+                                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                                             Color="Color.Default" Style="height:20px;font-size:0.72rem;">
+                                                        @p.ParameterName &nbsp;
+                                                        <span style="opacity:0.6">@p.DataType@(p.MaxLength.HasValue && p.MaxLength > 0 ? $"({p.MaxLength})" : "")</span>
+                                                    </MudChip>
+                                                }
+                                            </MudStack>
+                                        }
+                                        else
+                                        {
+                                            <MudText Typo="Typo.caption" Color="Color.Tertiary">No input parameters</MudText>
+                                        }
                                     }
                                     else
                                     {

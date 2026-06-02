@@ -27,6 +27,7 @@ public sealed class StoredProcedureGenerator
                 PropertyName  = NamingHelper.ToPropertyName(p.PropertyName),
                 Label         = NamingHelper.ToLabel(p.PropertyName),
                 ClrType       = p.ClrType,
+                DataType      = p.DataType,
                 IsDateType    = p.DataType is "date" or "datetime" or "datetime2" or "smalldatetime",
                 IsNumeric     = p.DataType is "int" or "bigint" or "smallint" or "tinyint"
                                     or "decimal" or "numeric" or "float" or "real" or "money" or "smallmoney",
