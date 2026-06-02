@@ -29,9 +29,15 @@
     </ToolBarContent>
     <Columns>
 {{- for col in grid_columns }}
-        <PropertyColumn Property="x => x.{{ col.property_name }}" Title="{{ col.name }}" Sortable="true" />
+{{-   if col.clr_type == "DateTime?" || col.clr_type == "DateTime" || col.clr_type == "DateOnly?" || col.clr_type == "DateOnly" || col.clr_type == "DateTimeOffset?" || col.clr_type == "DateTimeOffset" }}
+        <PropertyColumn Property="x => x.{{ col.property_name }}" Title="{{ col.name }}" Sortable="@true" Format="d" />
+{{-   else }}
+        <PropertyColumn Property="x => x.{{ col.property_name }}" Title="{{ col.name }}" Sortable="@true" />
+{{-   end }}
 {{- end }}
-        <TemplateColumn Title="Actions" Sortable="false">
+        <TemplateColumn Title="Actions" Sortable="@false"
+                        HeaderStyle="width:110px; min-width:110px; text-align:center;"
+                        CellStyle="width:110px; min-width:110px; white-space:nowrap; text-align:center;">
             <CellTemplate>
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
                                OnClick="@(() => OpenEditDialog(context.Item))" />
